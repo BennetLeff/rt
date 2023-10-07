@@ -1,6 +1,11 @@
 use std::io::{self, Write};
 
+use log::{info, Level};
+
+
 fn main() -> io::Result<()> {
+    env_logger::init();
+
     // println!("Hello, world!");
     let img_width = 256;
     let img_height = 256;
@@ -11,6 +16,8 @@ fn main() -> io::Result<()> {
 
     let mut ppm_data: String = "".to_owned();
     for j in 0..img_height {
+        info!("Scanlines remaining: {}", img_height - j);
+
         for i in 0..img_width {
             let r = (i as f32) / (img_width as f32 - 1.0);
             let g = (j as f32) / (img_height as f32 - 1.0);
@@ -27,6 +34,9 @@ fn main() -> io::Result<()> {
     }
 
     io::stdout().write_all(ppm_data.as_bytes())?;
+
+    // info!(target: "Progress", "Finished rendering.");
+    info!("Finished rendering.");
 
     Ok(())
 }
