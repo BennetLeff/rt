@@ -8,15 +8,18 @@ use log::{info, Level, debug};
 mod color;
 mod ray;
 mod hit;
+mod interval;
 
 use color::Color;
 use ray::Ray;
+use interval::Interval;
 
 use crate::hit::{HittableList, Sphere};
 
 fn ray_color(ray: &Ray, world: &dyn Hittable) -> glam::Vec3 {
     let mut rec = HitRecord::default();
-    if world.hit(ray, 0.0, f32::INFINITY, &mut rec) {
+    let current_interval = Interval::with_values(0.0, f32::INFINITY);
+    if world.hit(ray, current_interval, &mut rec) {
         0.5 * (rec.normal + glam::vec3(1.0, 1.0, 1.0))
     } else {
         let unit_direction = ray.direction.normalize();
