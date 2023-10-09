@@ -9,19 +9,26 @@ mod ray;
 use color::Color;
 use ray::Ray;
 
-fn hit_sphere(center: glam::Vec3, radius: f32, ray: &Ray) -> bool {
+fn hit_sphere(center: glam::Vec3, radius: f32, ray: &Ray) -> f32 {
     let oc = ray.origin - center;
     let a = ray.direction.dot(ray.direction);
-    let b = 2.0 * oc.dot(ray.direction);
     let c = oc.dot(oc) - radius*radius;
-    let discriminant = b*b - 4.0*a*c;
 
-    discriminant >= 0.0
+    let half_b = oc.dot(ray.direction);
+    let discriminant = half_b*half_b - a*c;
+
+    if discriminant < 0.0 {
+        -1.0
+    } else {
+        (-half_b - discriminant.sqrt()) / a
+    }
 }
 
 fn ray_color(ray: &Ray) -> glam::Vec3 {
-    if hit_sphere(glam::vec3(0.0,0.0,-1.0), 0.5, ray) {
-        glam::vec3(1.0, 0.0, 0.0)
+    let t = hit_sphere(glam::vec3(0.0,0.0,-1.0), 0.5, ray);
+    if t > 0.0 {
+        let normal = ray.at(t) - glam::vec3(0.0, 0.0, -1.0);
+        0.5 * (normal + 1.0)
     } else {
         let unit_direction = ray.direction.normalize();
         let a = 0.5 * (unit_direction.y + 1.0);
