@@ -1,34 +1,23 @@
 use std::io::{self, Write};
+use std::rc::Rc;
 
 use glam::Vec3;
+use hit::{Hittable, HitRecord };
 use log::{info, Level, debug};
 
 mod color;
 mod ray;
+mod hit;
 
 use color::Color;
 use ray::Ray;
 
-fn hit_sphere(center: glam::Vec3, radius: f32, ray: &Ray) -> f32 {
-    let oc = ray.origin - center;
-    let a = ray.direction.dot(ray.direction);
-    let c = oc.dot(oc) - radius*radius;
+use crate::hit::{HittableList, Sphere};
 
-    let half_b = oc.dot(ray.direction);
-    let discriminant = half_b*half_b - a*c;
-
-    if discriminant < 0.0 {
-        -1.0
-    } else {
-        (-half_b - discriminant.sqrt()) / a
-    }
-}
-
-fn ray_color(ray: &Ray) -> glam::Vec3 {
-    let t = hit_sphere(glam::vec3(0.0,0.0,-1.0), 0.5, ray);
-    if t > 0.0 {
-        let normal = ray.at(t) - glam::vec3(0.0, 0.0, -1.0);
-        0.5 * (normal + 1.0)
+fn ray_color(ray: &Ray, world: &dyn Hittable) -> glam::Vec3 {
+    let mut rec = HitRecord::default();
+    if world.hit(ray, 0.0, f32::INFINITY, &mut rec) {
+        0.5 * (rec.normal + glam::vec3(1.0, 1.0, 1.0))
     } else {
         let unit_direction = ray.direction.normalize();
         let a = 0.5 * (unit_direction.y + 1.0);
@@ -43,6 +32,13 @@ fn main() -> io::Result<()> {
     let aspect_ratio = 16.0 / 9.0 as f32; 
     let img_width = 400;
     let img_height = (img_width as f32 / aspect_ratio) as i32;
+
+    let mut world = HittableList::new();
+    let sphere_1 = Rc::new(Sphere::new(glam::vec3(0.0, 0.0, -1.0), 0.5));
+    let sphere_2 = Rc::new(Sphere::new(glam::vec3(0.0, -100.5, -1.0), 100.0));
+
+    world.add(sphere_1);
+    world.add(sphere_2);
 
     // camera
     let viewport_height: f32 = 2.0;
@@ -78,7 +74,7 @@ fn main() -> io::Result<()> {
             let r = Ray::new(camera_center, ray_direction);
             
 
-            let pixel_color = ray_color(&r);
+            let pixel_color = ray_color(&r, &world);
             // let pixel_color_str = format!("{} {} {}", pixel_color.x, pixel_color.y, pixel_color.z);
             let pixel_color_str = format!("{} {} {}\n",
                 (255.999 * pixel_color.x) as i32,
